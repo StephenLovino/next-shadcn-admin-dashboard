@@ -157,6 +157,7 @@ export const dashboardColumns: ColumnDef<z.infer<typeof sectionSchema>>[] = [
               <SelectValue placeholder="Assign reviewer" />
             </SelectTrigger>
             <SelectContent align="end">
+              <SelectItem value="Stephen Lovino">Stephen Lovino</SelectItem>
               <SelectItem value="Eddie Lake">Eddie Lake</SelectItem>
               <SelectItem value="Jamik Tashpulatov">Jamik Tashpulatov</SelectItem>
             </SelectContent>
