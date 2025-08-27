@@ -7,8 +7,8 @@ export const APP_CONFIG = {
   version: packageJson.version,
   copyright: `© ${currentYear}, AHA Rewards.`,
   meta: {
-    title: "AHA Rewards - Modern Next.js Dashboard Starter Template",
+    title: "AHA Rewards - Rewards Management Platform",
     description:
-      "AHA Rewards is a modern, open-source dashboard starter template built with Next.js 15, Tailwind CSS v4, and shadcn/ui. Perfect for SaaS apps, admin panels, and internal tools—fully customizable and production-ready.",
+      "AHA Rewards is a comprehensive rewards management platform built with modern web technologies. Manage rewards, track points, and engage your community with our intuitive dashboard.",
   },
 };
