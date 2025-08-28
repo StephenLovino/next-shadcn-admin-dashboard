@@ -62,10 +62,11 @@ export function GoogleButton({ className, ...props }: React.ComponentProps<typeo
       console.log("Redirect URL:", `${process.env.NEXT_PUBLIC_SITE_URL}/auth/v2/login`);
       console.log("Supabase URL:", process.env.NEXT_PUBLIC_SUPABASE_URL);
 
+      // Use a custom redirect strategy to bypass Supabase's default behavior
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/v2/login`,
+          redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
           queryParams: {
             prompt: "select_account", // Force account picker every time
             access_type: "offline", // Get refresh token
