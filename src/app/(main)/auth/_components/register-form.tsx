@@ -4,10 +4,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { supabase } from "@/lib/supabase";
 
 const FormSchema = z
   .object({
@@ -21,6 +24,9 @@ const FormSchema = z
   });
 
 export function RegisterForm() {
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
+
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
@@ -31,13 +37,47 @@ export function RegisterForm() {
   });
 
   const onSubmit = async (data: z.infer<typeof FormSchema>) => {
-    toast("You submitted the following values", {
-      description: (
-        <pre className="mt-2 w-[320px] rounded-md bg-neutral-950 p-4">
-          <code className="text-white">{JSON.stringify(data, null, 2)}</code>
-        </pre>
-      ),
-    });
+    setIsLoading(true);
+
+    try {
+      // Sign up the user
+      const { data: authData, error: signUpError } = await supabase.auth.signUp({
+        email: data.email,
+        password: data.password,
+      });
+
+      if (signUpError) {
+        toast.error("Registration failed", {
+          description: signUpError.message,
+        });
+        return;
+      }
+
+      if (authData.user) {
+        // Create a profile for the user
+        const { error: profileError } = await supabase.from("profiles").insert([
+          {
+            id: authData.user.id,
+            email: data.email,
+            full_name: data.email.split("@")[0], // Use email prefix as default name
+            points: 0, // Start with 0 points
+          },
+        ]);
+
+        if (profileError) {
+          console.error("Profile creation error:", profileError);
+          // Don't fail registration if profile creation fails
+        }
+
+        toast.success("Registration successful! Please check your email to verify your account.");
+        router.push("/auth/login");
+      }
+    } catch (error) {
+      toast.error("An unexpected error occurred");
+      console.error("Registration error:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -88,8 +128,8 @@ export function RegisterForm() {
             </FormItem>
           )}
         />
-        <Button className="w-full" type="submit">
-          Register
+        <Button className="w-full" type="submit" disabled={isLoading}>
+          {isLoading ? "Creating account..." : "Register"}
         </Button>
       </form>
     </Form>

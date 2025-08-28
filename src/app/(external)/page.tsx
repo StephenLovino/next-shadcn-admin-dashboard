@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
 export default function Home() {
-  redirect("/dashboard");
+  redirect("/auth/v2/login");
   return <>Coming Soon</>;
 }

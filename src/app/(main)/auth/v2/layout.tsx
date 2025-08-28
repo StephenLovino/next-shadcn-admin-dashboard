@@ -13,19 +13,19 @@ export default function Layout({ children }: Readonly<{ children: ReactNode }>) 
           <div className="text-primary-foreground absolute top-10 space-y-1 px-10">
             <Command className="size-10" />
             <h1 className="text-2xl font-medium">{APP_CONFIG.name}</h1>
-            <p className="text-sm">Design. Build. Launch. Repeat.</p>
+            <p className="text-sm">Track your rewards and get free subs!</p>
           </div>
 
           <div className="absolute bottom-10 flex w-full justify-between px-10">
             <div className="text-primary-foreground flex-1 space-y-1">
-              <h2 className="font-medium">Ready to launch?</h2>
-              <p className="text-sm">Clone the repo, install dependencies, and your dashboard is live in minutes.</p>
+              <h2 className="font-medium">Earn Points Daily</h2>
+              <p className="text-sm">Complete tasks, refer friends, and watch your rewards grow with every action.</p>
             </div>
             <Separator orientation="vertical" className="mx-3 !h-auto" />
             <div className="text-primary-foreground flex-1 space-y-1">
-              <h2 className="font-medium">Need help?</h2>
+              <h2 className="font-medium">Redeem Rewards</h2>
               <p className="text-sm">
-                Check out the docs or open an issue on GitHub, community support is just a click away.
+                Convert your points into free subscriptions, gift cards, and exclusive member benefits.
               </p>
             </div>
           </div>
