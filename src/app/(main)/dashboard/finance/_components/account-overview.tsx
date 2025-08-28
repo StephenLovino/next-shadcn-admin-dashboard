@@ -9,6 +9,8 @@ import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle }
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatCurrency, cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/auth-context";
+import { useUserPermissions } from "@/hooks/use-user-permissions";
 
 function ChipSVG() {
   return (
@@ -65,6 +67,16 @@ const recentPayments = [
 ];
 
 export function AccountOverview() {
+  const { user } = useAuth();
+  const { permissions } = useUserPermissions();
+  
+  // Get user's display name from profile or fallback to email
+  const displayName = permissions?.fullName || 
+                     user?.user_metadata?.full_name || 
+                     user?.user_metadata?.name || 
+                     user?.email?.split('@')[0] || 
+                     'User';
+
   return (
     <Card className="shadow-xs">
       <CardHeader className="items-center">
@@ -93,7 +105,7 @@ export function AccountOverview() {
                 <div className="absolute top-1/2 w-full -translate-y-1/2">
                   <div className="flex items-end justify-between px-6">
                     <span className="text-accent font-mono text-lg leading-none font-medium tracking-wide uppercase">
-                      Stephen Lovino
+                      {displayName}
                     </span>
                     <ChipSVG />
                   </div>

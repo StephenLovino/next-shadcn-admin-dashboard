@@ -26,9 +26,10 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { type NavGroup, type NavMainItem } from "@/navigation/sidebar/sidebar-items";
+import { useFilteredSidebarItems } from "@/hooks/use-filtered-sidebar-items";
 
 interface NavMainProps {
-  readonly items: readonly NavGroup[];
+  readonly items?: readonly NavGroup[]; // Make items optional since we'll use filtered items
 }
 
 const IsComingSoon = () => (
@@ -141,9 +142,13 @@ const NavItemCollapsed = ({
   );
 };
 
-export function NavMain({ items }: NavMainProps) {
+export function NavMain({ items: propItems }: NavMainProps) {
   const path = usePathname();
   const { state, isMobile } = useSidebar();
+  const { filteredItems, loading, userRole } = useFilteredSidebarItems();
+  
+  // Use filtered items if no items are passed as props, otherwise use props
+  const items = propItems || filteredItems;
 
   const isItemActive = (url: string, subItems?: NavMainItem["subItems"]) => {
     if (subItems?.length) {
@@ -181,6 +186,17 @@ export function NavMain({ items }: NavMainProps) {
           </SidebarMenu>
         </SidebarGroupContent>
       </SidebarGroup>
+      
+      {/* Role Indicator */}
+      {!loading && userRole && (
+        <SidebarGroup>
+          <SidebarGroupContent className="px-3 py-2">
+            <div className="text-xs text-muted-foreground">
+              Role: <span className="font-medium capitalize">{userRole}</span>
+            </div>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      )}
       {items.map((group) => (
         <SidebarGroup key={group.id}>
           {group.label && <SidebarGroupLabel>{group.label}</SidebarGroupLabel>}
