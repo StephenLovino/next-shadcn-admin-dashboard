@@ -58,13 +58,14 @@ export function GoogleButton({ className, ...props }: React.ComponentProps<typeo
     try {
       console.log("🚀 Starting Google OAuth...");
       console.log("Current origin:", window.location.origin);
-      console.log("Redirect URL:", `${window.location.origin}/auth/v2/login`);
+      console.log("Site URL from env:", process.env.NEXT_PUBLIC_SITE_URL);
+      console.log("Redirect URL:", `${process.env.NEXT_PUBLIC_SITE_URL}/auth/v2/login`);
       console.log("Supabase URL:", process.env.NEXT_PUBLIC_SUPABASE_URL);
 
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/v2/login`,
+          redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/v2/login`,
           queryParams: {
             prompt: "select_account", // Force account picker every time
             access_type: "offline", // Get refresh token
