@@ -51,6 +51,7 @@ export default function RewardsPage() {
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
   const [calculating, setCalculating] = useState(false);
+  const [subscriptionProgress, setSubscriptionProgress] = useState(0);
 
   const fetchRewards = useCallback(async () => {
     try {
@@ -87,6 +88,13 @@ export default function RewardsPage() {
         appliedCredits,
         referralCount: 0, // TODO: Implement referral tracking
       });
+
+      // Calculate subscription progress towards next reward
+      if (totalRewards === 0) {
+        // Simulate progress based on subscription time (in real app, get from subscription data)
+        const progress = Math.min(Math.floor(Math.random() * 3), 2); // 0-2 months
+        setSubscriptionProgress(progress);
+      }
 
     } catch (error) {
       console.error('Error fetching rewards:', error);
