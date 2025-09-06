@@ -107,8 +107,9 @@ async function syncCustomersToDatabase() {
                 
                 // Safely handle current_period_end
                 try {
-                  if (sub.current_period_end && typeof sub.current_period_end === 'number') {
-                    currentPeriodEnd = new Date(sub.current_period_end * 1000).toISOString();
+                  const subData = sub as any;
+                  if (subData.current_period_end && typeof subData.current_period_end === 'number') {
+                    currentPeriodEnd = new Date(subData.current_period_end * 1000).toISOString();
                   }
                 } catch {
                   console.log(`Invalid current_period_end for subscription ${sub.id}`);

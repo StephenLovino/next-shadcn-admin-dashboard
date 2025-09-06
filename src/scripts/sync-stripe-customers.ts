@@ -119,7 +119,7 @@ async function syncCustomerSubscriptions(customerId: string, customerEmail: stri
           .update({
             status: subscription.status,
             current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-            current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+            current_period_end: new Date((subscription as any).current_period_end * 1000).toISOString(),
             cancel_at_period_end: subscription.cancel_at_period_end,
             updated_at: new Date().toISOString(),
           })
@@ -142,7 +142,7 @@ async function syncCustomerSubscriptions(customerId: string, customerEmail: stri
               stripe_subscription_id: subscription.id,
               status: subscription.status,
               current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-              current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+              current_period_end: new Date((subscription as any).current_period_end * 1000).toISOString(),
               cancel_at_period_end: subscription.cancel_at_period_end,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
