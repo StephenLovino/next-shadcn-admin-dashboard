@@ -60,7 +60,7 @@ export const sidebarItems: NavGroup[] = [
       },
       {
         title: "Rewards",
-        url: "/dashboard/finance",
+        url: "/dashboard/rewards",
         icon: Banknote,
       },
       {
@@ -125,9 +125,8 @@ export const sidebarItems: NavGroup[] = [
       },
       {
         title: "Users",
-        url: "/users",
+        url: "/dashboard/users",
         icon: Users,
-        comingSoon: true,
       },
       {
         title: "Roles",
