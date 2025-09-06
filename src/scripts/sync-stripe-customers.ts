@@ -118,9 +118,9 @@ async function syncCustomerSubscriptions(customerId: string, customerEmail: stri
           .from('subscriptions')
           .update({
             status: subscription.status,
-            current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
+            current_period_start: new Date((subscription as any).current_period_start * 1000).toISOString(),
             current_period_end: new Date((subscription as any).current_period_end * 1000).toISOString(),
-            cancel_at_period_end: subscription.cancel_at_period_end,
+            cancel_at_period_end: (subscription as any).cancel_at_period_end,
             updated_at: new Date().toISOString(),
           })
           .eq('id', existingSub.id);
@@ -141,9 +141,9 @@ async function syncCustomerSubscriptions(customerId: string, customerEmail: stri
               stripe_customer_id: customerId,
               stripe_subscription_id: subscription.id,
               status: subscription.status,
-              current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
+              current_period_start: new Date((subscription as any).current_period_start * 1000).toISOString(),
               current_period_end: new Date((subscription as any).current_period_end * 1000).toISOString(),
-              cancel_at_period_end: subscription.cancel_at_period_end,
+              cancel_at_period_end: (subscription as any).cancel_at_period_end,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
             });
@@ -151,7 +151,7 @@ async function syncCustomerSubscriptions(customerId: string, customerEmail: stri
       }
       
       // Sync payment history for this subscription
-      await syncSubscriptionPayments(subscription.id, customerId);
+      await syncSubscriptionPayments(subscription.id);
     }
     
   } catch (error) {
@@ -168,12 +168,12 @@ async function syncSubscriptionPayments(subscriptionId: string) {
     });
     
     for (const invoice of invoices.data) {
-      if (invoice.payment_intent && invoice.status === 'paid') {
+      if ((invoice as any).payment_intent && invoice.status === 'paid') {
         // Check if payment already exists
         const { data: existingPayment } = await supabase
           .from('payment_history')
           .select('id')
-          .eq('stripe_payment_intent_id', invoice.payment_intent)
+          .eq('stripe_payment_intent_id', (invoice as any).payment_intent)
           .single();
         
         if (!existingPayment) {
@@ -182,7 +182,7 @@ async function syncSubscriptionPayments(subscriptionId: string) {
             .from('payment_history')
             .insert({
               subscription_id: subscriptionId,
-              stripe_payment_intent_id: invoice.payment_intent,
+              stripe_payment_intent_id: (invoice as any).payment_intent,
               amount: invoice.amount_paid,
               currency: invoice.currency,
               status: 'succeeded',
