@@ -61,7 +61,14 @@ export async function POST(req: Request) {
     const update: Record<string, unknown> = {};
     if (typeof body.full_name === "string") update.full_name = body.full_name;
     if (typeof body.email === "string") update.email = body.email;
-    if (typeof body.role === "string") update.role = body.role;
+    if (typeof body.role === "string") {
+      const normalizedRole = body.role.toLowerCase();
+      const allowedRoles = new Set(["owner", "admin", "manager", "viewer"]);
+      if (!allowedRoles.has(normalizedRole)) {
+        return NextResponse.json({ error: `Invalid role: ${body.role}` }, { status: 400 });
+      }
+      update.role = normalizedRole;
+    }
     update.updated_at = new Date().toISOString();
 
     const { data: initialUpdated, error: updateErr } = await serviceClient
