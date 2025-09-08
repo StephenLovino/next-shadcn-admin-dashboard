@@ -413,7 +413,7 @@ class GHLMCPClient {
       console.log('Using Token:', this.config.headers.Authorization.substring(0, 20) + '...');
       
       this.connectionFailed = false; // Reset connection status
-      const contacts = await this.getContacts(1, 0);
+      await this.getContacts(1, 0);
       console.log('GHL API connection test successful');
       return true;
     } catch (error) {

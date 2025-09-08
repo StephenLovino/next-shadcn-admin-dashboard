@@ -64,7 +64,7 @@ export async function POST(req: Request) {
     if (typeof body.role === "string") update.role = body.role;
     update.updated_at = new Date().toISOString();
 
-    let { data: updated, error: updateErr } = await serviceClient
+    const { data: updated, error: updateErr } = await serviceClient
       .from("profiles")
       .update(update)
       .eq("id", body.id)

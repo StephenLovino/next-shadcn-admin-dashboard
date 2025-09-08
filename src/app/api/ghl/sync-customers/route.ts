@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { ghlClient } from '@/lib/ghl-mcp';
 import { supabase } from '@/lib/supabase';
 
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
     const { data: sessionData } = await supabase.auth.getSession();
     if (!sessionData?.session?.access_token) {
