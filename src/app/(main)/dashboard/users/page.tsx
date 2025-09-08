@@ -533,7 +533,7 @@ export default function UsersPage() {
   const paginatedCustomers = filteredCustomers.slice(startIndex, endIndex);
   
   // Debug pagination
-  console.log('Pagination Debug:', {
+  console.log('🔍 PAGINATION DEBUG:', {
     customersLength: customers.length,
     filteredCustomersLength: filteredCustomers.length,
     itemsPerPage,
@@ -541,7 +541,8 @@ export default function UsersPage() {
     currentPage,
     startIndex,
     endIndex,
-    paginatedLength: paginatedCustomers.length
+    paginatedLength: paginatedCustomers.length,
+    shouldShowPagination: totalPages > 1
   });
 
 
@@ -1638,16 +1639,30 @@ export default function UsersPage() {
                 {/* Pagination Controls */}
                 <div className="flex items-center justify-between mt-4 pt-4 border-t">
                   <div className="text-sm text-muted-foreground">
-                    Showing {startIndex + 1}-{Math.min(endIndex, filteredCustomers.length)} of {filteredCustomers.length} customers
-                    {totalCustomerCount > 0 && totalCustomerCount !== filteredCustomers.length && (
-                      <span className="ml-2 text-blue-600">
-                        (Total in database: {totalCustomerCount})
+                    {customers.length === 0 ? (
+                      <span className="text-red-600 font-semibold">
+                        ⚠️ NO CUSTOMERS LOADED! Check console for debug info.
                       </span>
+                    ) : (
+                      <>
+                        Showing {startIndex + 1}-{Math.min(endIndex, filteredCustomers.length)} of {filteredCustomers.length} customers
+                        {totalCustomerCount > 0 && totalCustomerCount !== filteredCustomers.length && (
+                          <span className="ml-2 text-blue-600">
+                            (Total in database: {totalCustomerCount})
+                          </span>
+                        )}
+                      </>
                     )}
                   </div>
                   
-                  {totalPages > 1 && (
+                  {/* Always show pagination controls for debugging */}
+                  {(totalPages > 1 || customers.length === 0) && (
                     <div className="flex items-center space-x-2">
+                      {customers.length === 0 && (
+                        <div className="text-red-600 text-sm font-semibold mr-4">
+                          DEBUG: customers.length = 0, totalPages = {totalPages}
+                        </div>
+                      )}
                       <Button
                         variant="outline"
                         size="sm"
