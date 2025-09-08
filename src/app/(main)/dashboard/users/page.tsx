@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useUserPermissions } from "@/hooks/use-user-permissions";
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
-import { addUser, updateUser, deleteUser, InternalUser } from "@/data/users";
+import { addUser, deleteUser, InternalUser } from "@/data/users";
 import { Plus, Edit, Trash2, UserCheck, UserX, Clock, Users, UserPlus, RefreshCw, Pause, Play, CheckCircle, AlertCircle, Search, Filter, Download, X, ArrowUpDown, ArrowUp, ArrowDown, ExternalLink, Tag, Zap } from "lucide-react";
 
 interface CustomerData {
@@ -155,39 +155,20 @@ export default function UsersPage() {
       }
       
       // Fetch customers from database (synced from Stripe) - fetch all rows
-      let allCustomers: any[] = [];
-      let from = 0;
-      const batchSize = 1000;
-      
-      while (true) {
-        const { data: batch, error } = await supabase
-          .from('customers')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .range(from, from + batchSize - 1);
-          
-        if (error) {
-          console.error('Error fetching customers batch:', error);
-          break;
-        }
-        
-        if (!batch || batch.length === 0) {
-          break;
-        }
-        
-        allCustomers = [...allCustomers, ...batch];
-        console.log(`📊 Fetched batch ${Math.floor(from/batchSize) + 1}: ${batch.length} customers (total: ${allCustomers.length})`);
-        from += batchSize;
-        
-        // If we got less than batchSize, we've reached the end
-        if (batch.length < batchSize) {
-          break;
-        }
-      }
-      
-      const customers = allCustomers;
+      const { data: customers, error } = await supabase
+        .from('customers')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(2000); // Increased limit to get all customers
 
-      if (customers.length === 0) {
+      if (error) {
+        console.error('Error fetching customers:', error);
+        // Fallback to profiles if customers table doesn't exist yet
+        await fetchCustomersFromProfiles();
+        return;
+      }
+
+      if (!customers || customers.length === 0) {
         console.error('No customers fetched, trying fallback');
         // Fallback to profiles if customers table doesn't exist yet
         await fetchCustomersFromProfiles();
