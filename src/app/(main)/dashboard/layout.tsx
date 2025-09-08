@@ -17,6 +17,7 @@ import {
 import { LayoutControls } from "./_components/sidebar/layout-controls";
 import { SearchDialog } from "./_components/sidebar/search-dialog";
 import { ThemeSwitcher } from "./_components/sidebar/theme-switcher";
+import { ProtectedRoute } from "@/components/auth/protected-route";
 
 export default async function Layout({ children }: Readonly<{ children: ReactNode }>) {
   const defaultOpen = true; // Always start with expanded sidebar
@@ -47,7 +48,11 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
             <ThemeSwitcher />
           </div>
         </header>
-        <div className="flex min-h-0 flex-1 flex-col gap-4 min-w-0">{children}</div>
+        <div className="flex min-h-0 flex-1 flex-col gap-4 min-w-0">
+          <ProtectedRoute>
+            {children}
+          </ProtectedRoute>
+        </div>
       </SidebarInset>
     </SidebarProvider>
   );
