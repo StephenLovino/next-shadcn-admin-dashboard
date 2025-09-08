@@ -2,11 +2,18 @@ import { NextResponse } from 'next/server';
 import { ghlClient } from '@/lib/ghl-mcp';
 import { supabase } from '@/lib/supabase';
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
-    const { data: sessionData } = await supabase.auth.getSession();
-    if (!sessionData?.session?.access_token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // Get auth header from request
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader) {
+      return NextResponse.json({ error: 'Unauthorized - No auth header' }, { status: 401 });
+    }
+
+    // Verify the session using the auth header
+    const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized - Invalid token' }, { status: 401 });
     }
 
     // Get Stripe customers from database

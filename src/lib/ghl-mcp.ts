@@ -3,6 +3,8 @@
  * Handles communication with GHL MCP server for contact management and tagging
  */
 
+import { supabase } from './supabase';
+
 interface GHLConfig {
   mcpUrl: string;
   apiUrl: string;
@@ -47,6 +49,7 @@ interface GHLSyncResult {
 class GHLMCPClient {
   private config: GHLConfig;
   private connectionFailed: boolean = false;
+  private supabaseClient = supabase;
 
   constructor() {
     this.config = {
@@ -312,19 +315,53 @@ class GHLMCPClient {
         
         if (ghlContact) {
           result.matched++;
-          
+
+          // Get current tags from GHL contact
+          const currentTags = ghlContact.tags || [];
+
           // Determine tags based on Stripe data
-          const tags = this.generateTagsFromStripeData(customer);
-          
-          if (tags.length > 0) {
-            const success = await this.addTagsToContact(ghlContact.id, tags);
+          const newTags = this.generateTagsFromStripeData(customer);
+
+          // Update database with GHL contact info and current tags
+          try {
+            const { error: updateError } = await this.supabaseClient
+              .from('customers')
+              .update({
+                ghl_contact_id: ghlContact.id,
+                ghl_sync_status: 'synced',
+                ghl_last_synced_at: new Date().toISOString(),
+                ghl_tags: currentTags
+              })
+              .eq('email', customer.email);
+
+            if (updateError) {
+              console.error('Failed to update customer in database:', updateError);
+            }
+          } catch (dbError) {
+            console.error('Database update error:', dbError);
+          }
+
+          if (newTags.length > 0) {
+            const success = await this.addTagsToContact(ghlContact.id, newTags);
             if (success) {
               result.updated++;
+
+              // Update database with new tags after adding them
+              try {
+                const updatedTags = [...new Set([...currentTags, ...newTags])];
+                await this.supabaseClient
+                  .from('customers')
+                  .update({ ghl_tags: updatedTags })
+                  .eq('email', customer.email);
+              } catch (dbError) {
+                console.error('Failed to update tags in database:', dbError);
+              }
+
               result.details.push({
                 contactId: ghlContact.id,
                 email: customer.email,
                 status: 'updated',
-                message: `Added tags: ${tags.join(', ')}`
+                message: `Added tags: ${newTags.join(', ')}`
               });
             } else {
               result.errors++;
@@ -340,14 +377,29 @@ class GHLMCPClient {
               contactId: ghlContact.id,
               email: customer.email,
               status: 'matched',
-              message: 'No tags to add'
+              message: 'Contact synced, no new tags to add'
             });
           }
         } else {
+          // Update database to mark as not found
+          try {
+            await this.supabaseClient
+              .from('customers')
+              .update({
+                ghl_contact_id: null,
+                ghl_sync_status: 'not_found',
+                ghl_last_synced_at: new Date().toISOString(),
+                ghl_tags: []
+              })
+              .eq('email', customer.email);
+          } catch (dbError) {
+            console.error('Failed to update not found customer in database:', dbError);
+          }
+
           result.details.push({
             contactId: '',
             email: customer.email,
-            status: 'error',
+            status: 'not_found',
             message: 'Contact not found in GHL'
           });
         }

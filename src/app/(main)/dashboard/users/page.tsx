@@ -15,6 +15,12 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { addUser, deleteUser, InternalUser } from "@/data/users";
 import { Plus, Edit, Trash2, UserCheck, UserX, Clock, Users, UserPlus, RefreshCw, Pause, Play, CheckCircle, AlertCircle, Search, Filter, Download, X, ArrowUpDown, ArrowUp, ArrowDown, ExternalLink, Tag, Zap } from "lucide-react";
+import { ColumnDef } from "@tanstack/react-table";
+import { DataTable } from "@/components/data-table/data-table";
+import { DataTablePagination } from "@/components/data-table/data-table-pagination";
+import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
+import { useDataTableInstance } from "@/hooks/use-data-table-instance";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface CustomerData {
   id: string;
@@ -57,6 +63,224 @@ interface GHLSyncResult {
   }[];
 }
 
+// Column definitions for the customer table
+const customerColumns: ColumnDef<CustomerData>[] = [
+  {
+    id: "select",
+    header: ({ table }) => (
+      <div className="flex items-center justify-center">
+        <Checkbox
+          checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+        />
+      </div>
+    ),
+    cell: ({ row }) => (
+      <div className="flex items-center justify-center">
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+        />
+      </div>
+    ),
+    enableSorting: false,
+    enableHiding: false,
+  },
+  {
+    accessorKey: "full_name",
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Customer" />,
+    cell: ({ row }) => (
+      <div className="min-w-[200px] max-w-[250px]">
+        <div className="font-medium truncate" title={row.original.full_name}>
+          {row.original.full_name}
+        </div>
+        <div className="text-sm text-muted-foreground truncate" title={row.original.email}>
+          {row.original.email}
+        </div>
+      </div>
+    ),
+  },
+  {
+    accessorKey: "role",
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Role" />,
+    cell: ({ row }) => (
+      <div className="w-[100px]">
+        <Badge variant="outline" className="capitalize">
+          {row.original.role}
+        </Badge>
+      </div>
+    ),
+  },
+  {
+    accessorKey: "subscription_status",
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
+    cell: ({ row }) => {
+      const status = row.original.subscription_status || 'No Subscription';
+      const getStatusColor = (status: string) => {
+        switch (status.toLowerCase()) {
+          case 'active': return 'bg-green-100 text-green-800 border-green-200';
+          case 'canceled': return 'bg-red-100 text-red-800 border-red-200';
+          case 'past_due': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+          case 'unpaid': return 'bg-orange-100 text-orange-800 border-orange-200';
+          default: return 'bg-gray-100 text-gray-800 border-gray-200';
+        }
+      };
+      return <Badge className={getStatusColor(status)}>{status}</Badge>;
+    },
+  },
+  {
+    accessorKey: "payment_count",
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Payments" />,
+    cell: ({ row }) => (
+      <div className="text-center w-[80px]">
+        <div className="font-medium">{row.original.payment_count}</div>
+        <div className="text-xs text-muted-foreground">payments</div>
+      </div>
+    ),
+  },
+  {
+    accessorKey: "loyalty_progress",
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Loyalty" />,
+    cell: ({ row }) => {
+      const progress = row.original.loyalty_progress;
+      const getLoyaltyBadge = (progress: number) => {
+        if (progress >= 80) return { text: 'VIP', color: 'bg-purple-100 text-purple-800 border-purple-200' };
+        if (progress >= 60) return { text: 'Gold', color: 'bg-yellow-100 text-yellow-800 border-yellow-200' };
+        if (progress >= 40) return { text: 'Silver', color: 'bg-gray-100 text-gray-800 border-gray-200' };
+        if (progress >= 20) return { text: 'Bronze', color: 'bg-orange-100 text-orange-800 border-orange-200' };
+        return { text: 'New', color: 'bg-blue-100 text-blue-800 border-blue-200' };
+      };
+      const badge = getLoyaltyBadge(progress);
+      return (
+        <div className="w-[80px]">
+          <Badge className={badge.color}>{badge.text}</Badge>
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "total_paid",
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Total Paid" />,
+    cell: ({ row }) => (
+      <div className="w-[100px] text-right font-mono">
+        ${(row.original.total_paid / 100).toFixed(2)}
+      </div>
+    ),
+  },
+  {
+    accessorKey: "last_payment_date",
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Last Payment" />,
+    cell: ({ row }) => (
+      <div className="w-[100px] text-sm">
+        {row.original.last_payment_date
+          ? new Date(row.original.last_payment_date).toLocaleDateString()
+          : 'Never'}
+      </div>
+    ),
+  },
+  {
+    accessorKey: "subscription_plan",
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Plan" />,
+    cell: ({ row }) => {
+      const plan = row.original.subscription_plan;
+      if (!plan) return <span className="text-muted-foreground text-sm">No Plan</span>;
+
+      return (
+        <div className="max-w-[200px]">
+          <div
+            className="text-sm font-medium truncate"
+            title={plan}
+          >
+            {plan}
+          </div>
+          {plan.length > 25 && (
+            <div className="text-xs text-muted-foreground mt-1">
+              {plan.substring(0, 25)}...
+            </div>
+          )}
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "card_status",
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Card Status" />,
+    cell: ({ row }) => {
+      const status = row.original.card_status || 'No Card';
+      const getCardStatusColor = (status: string) => {
+        switch (status.toLowerCase()) {
+          case 'active': return 'bg-green-100 text-green-800 border-green-200';
+          case 'no card': return 'bg-gray-100 text-gray-800 border-gray-200';
+          default: return 'bg-red-100 text-red-800 border-red-200';
+        }
+      };
+      return (
+        <div className="w-[100px]">
+          <Badge className={getCardStatusColor(status)}>{status}</Badge>
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "ghl_contact_id",
+    header: ({ column }) => <DataTableColumnHeader column={column} title="GHL Status" />,
+    cell: ({ row }) => {
+      const customer = row.original;
+      const tags = customer.ghl_tags || [];
+
+      if (customer.ghl_contact_id) {
+        return (
+          <div className="w-[180px]">
+            <div className="flex items-center gap-2 mb-1">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <span className="text-sm text-green-600 font-medium">Synced</span>
+            </div>
+            {tags.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {tags.slice(0, 2).map((tag, index) => (
+                  <Badge
+                    key={index}
+                    variant="secondary"
+                    className="text-xs px-1 py-0 h-5"
+                  >
+                    {tag}
+                  </Badge>
+                ))}
+                {tags.length > 2 && (
+                  <Badge
+                    variant="outline"
+                    className="text-xs px-1 py-0 h-5"
+                    title={tags.slice(2).join(', ')}
+                  >
+                    +{tags.length - 2}
+                  </Badge>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      }
+      return (
+        <div className="flex items-center gap-2 w-[180px]">
+          <AlertCircle className="h-4 w-4 text-yellow-600" />
+          <span className="text-sm text-yellow-600">Not Found</span>
+        </div>
+      );
+    },
+    sortingFn: (rowA, rowB) => {
+      const aHasContact = !!rowA.original.ghl_contact_id;
+      const bHasContact = !!rowB.original.ghl_contact_id;
+
+      // Sort synced contacts first (true > false)
+      if (aHasContact && !bHasContact) return -1;
+      if (!aHasContact && bHasContact) return 1;
+      return 0;
+    },
+  },
+];
+
 export default function UsersPage() {
   const { permissions } = useUserPermissions();
   const [customers, setCustomers] = useState<CustomerData[]>([]);
@@ -73,9 +297,7 @@ export default function UsersPage() {
   const [planFilter, setPlanFilter] = useState('all');
   const [showFilters, setShowFilters] = useState(false);
   
-  // Pagination states
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(50);
+  // Total customer count for display
   const [totalCustomerCount, setTotalCustomerCount] = useState(0);
   
   // Active tab state with localStorage persistence
@@ -87,9 +309,7 @@ export default function UsersPage() {
     return 'team';
   });
   
-  // Sorting states
-  const [sortField, setSortField] = useState<keyof CustomerData | null>(null);
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+
   
   // GHL integration states
   const [ghlConnected, setGhlConnected] = useState(false);
@@ -135,6 +355,14 @@ export default function UsersPage() {
     department: "",
     permissions: [] as string[],
     notes: ""
+  });
+
+  // TanStack Table instance for customer management
+  const customerTable = useDataTableInstance({
+    data: filteredCustomers,
+    columns: customerColumns,
+    defaultPageSize: 50,
+    getRowId: (row) => row.id,
   });
 
   const fetchCustomers = useCallback(async () => {
@@ -446,7 +674,24 @@ export default function UsersPage() {
 
   // Filter, search, and sort logic
   useEffect(() => {
-    let filtered = customers;
+    // First, merge customers with GHL data
+    let customersWithGhlData = customers.map(customer => {
+      const ghlData = customerGhlData[customer.email];
+      if (ghlData && ghlData.tags.length > 0) {
+        console.log(`🏷️ Customer ${customer.email} has tags:`, ghlData.tags);
+      }
+      return {
+        ...customer,
+        ghl_contact_id: ghlData?.contactId || customer.ghl_contact_id,
+        ghl_tags: ghlData?.tags || customer.ghl_tags || [],
+        ghl_sync_status: ghlData?.contactId ? 'synced' : 'not_found'
+      };
+    });
+
+    console.log('🔄 Total customerGhlData entries:', Object.keys(customerGhlData).length);
+    console.log('🔄 Customers with GHL data:', customersWithGhlData.filter(c => c.ghl_tags.length > 0).length);
+
+    let filtered = customersWithGhlData;
 
     // Search filter
     if (searchTerm) {
@@ -501,57 +746,10 @@ export default function UsersPage() {
       });
     }
 
-    // Sorting
-    if (sortField) {
-      filtered.sort((a, b) => {
-        let aValue = a[sortField];
-        let bValue = b[sortField];
-
-        // Handle null/undefined values
-        if (aValue === null || aValue === undefined) aValue = '';
-        if (bValue === null || bValue === undefined) bValue = '';
-
-        // Convert to strings for comparison if needed
-        if (typeof aValue === 'string' && typeof bValue === 'string') {
-          aValue = aValue.toLowerCase();
-          bValue = bValue.toLowerCase();
-        }
-
-        if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
-        if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
-        return 0;
-      });
-    }
-
     setFilteredCustomers(filtered);
-  }, [customers, searchTerm, subscriptionFilter, loyaltyFilter, cardStatusFilter, planFilter, sortField, sortDirection]);
-
-  // Pagination logic
-  const totalPages = Math.ceil(filteredCustomers.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = itemsPerPage === -1 ? filteredCustomers.length : startIndex + itemsPerPage;
-  const paginatedCustomers = filteredCustomers.slice(startIndex, endIndex);
-  
-  // Debug pagination - explicit logging (client-side only)
-  if (typeof window !== 'undefined') {
-    console.log('🔍 PAGINATION DEBUG:');
-    console.log('  customersLength:', customers.length);
-    console.log('  filteredCustomersLength:', filteredCustomers.length);
-    console.log('  itemsPerPage:', itemsPerPage);
-    console.log('  totalPages:', totalPages);
-    console.log('  currentPage:', currentPage);
-    console.log('  startIndex:', startIndex);
-    console.log('  endIndex:', endIndex);
-    console.log('  paginatedLength:', paginatedCustomers.length);
-    console.log('  shouldShowPagination:', totalPages > 1);
-    console.log('  paginationCondition:', totalPages > 1 || customers.length === 0);
-  }
+  }, [customers, customerGhlData, searchTerm, subscriptionFilter, loyaltyFilter, cardStatusFilter, planFilter]);
 
 
-  // Reset to first page when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, subscriptionFilter, loyaltyFilter, cardStatusFilter, planFilter]);
 
   // CSV Export function
   const exportToCSV = () => {
@@ -637,9 +835,8 @@ export default function UsersPage() {
     setLoyaltyFilter('all');
     setCardStatusFilter('all');
     setPlanFilter('all');
-    setSortField(null);
-    setSortDirection('asc');
-    setCurrentPage(1);
+
+
   };
 
   // GHL Integration Functions
@@ -748,11 +945,18 @@ export default function UsersPage() {
     try {
       setGhlSyncing(true);
       setGhlSyncResult(null);
-      
+
+      // Get current session for auth
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('No active session');
+      }
+
       const response = await fetch('/api/ghl/sync-customers', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
         },
       });
 
@@ -906,27 +1110,7 @@ export default function UsersPage() {
     }
   };
 
-  // Handle column sorting
-  const handleSort = (field: keyof CustomerData) => {
-    if (sortField === field) {
-      // If clicking the same field, toggle direction
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      // If clicking a new field, set it and default to ascending
-      setSortField(field);
-      setSortDirection('asc');
-    }
-  };
 
-  // Get sort icon for column headers
-  const getSortIcon = (field: keyof CustomerData) => {
-    if (sortField !== field) {
-      return <ArrowUpDown className="h-4 w-4 text-muted-foreground" />;
-    }
-    return sortDirection === 'asc' 
-      ? <ArrowUp className="h-4 w-4 text-foreground" />
-      : <ArrowDown className="h-4 w-4 text-foreground" />;
-  };
 
   // Team management functions
   const handleAddUser = async () => {
@@ -1073,12 +1257,7 @@ export default function UsersPage() {
     }
   };
 
-  const getLoyaltyBadge = (months: number) => {
-    if (months >= 6) return { text: '6+ Months', color: 'bg-purple-100 text-purple-800' };
-    if (months >= 3) return { text: '3+ Months', color: 'bg-blue-100 text-blue-800' };
-    if (months >= 1) return { text: '1+ Month', color: 'bg-green-100 text-green-800' };
-    return { text: 'New', color: 'bg-gray-100 text-gray-800' };
-  };
+
 
   const getRoleColor = (role: InternalUser['role']) => {
     switch (role) {
@@ -1609,172 +1788,7 @@ export default function UsersPage() {
                     </Button>
                   </div>
                 </div>
-                <div className="mt-4 flex items-center justify-between">
-                  <div className="text-sm text-muted-foreground">
-                    {sortField && (
-                      <span>
-                        Sorted by {sortField.replace('_', ' ')} ({sortDirection})
-                      </span>
-                    )}
-                  </div>
-                  
-                  {/* Items per page selector */}
-                  <div className="flex items-center gap-2">
-                    <Label htmlFor="items-per-page" className="text-sm">Show:</Label>
-                    <Select value={itemsPerPage.toString()} onValueChange={(value) => {
-                      setItemsPerPage(value === 'all' ? -1 : parseInt(value));
-                      setCurrentPage(1);
-                    }}>
-                      <SelectTrigger className="w-20">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="50">50</SelectItem>
-                        <SelectItem value="100">100</SelectItem>
-                        <SelectItem value="500">500</SelectItem>
-                        <SelectItem value="all">All</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
 
-                {/* Pagination Controls */}
-                <div className="flex items-center justify-between mt-4 pt-4 border-t">
-                  <div className="text-sm text-muted-foreground">
-                    {customers.length === 0 ? (
-                      <span className="text-red-600 font-semibold">
-                        ⚠️ NO CUSTOMERS LOADED! Check console for debug info.
-                      </span>
-                    ) : (
-                      <>
-                        Showing {startIndex + 1}-{Math.min(endIndex, filteredCustomers.length)} of {filteredCustomers.length} customers
-                        {totalCustomerCount > 0 && totalCustomerCount !== filteredCustomers.length && (
-                          <span className="ml-2 text-blue-600">
-                            (Total in database: {totalCustomerCount})
-                          </span>
-                        )}
-                        <div className="mt-1 text-xs text-gray-500">
-                          DEBUG: customers={customers.length}, filtered={filteredCustomers.length}, totalPages={totalPages}, itemsPerPage={itemsPerPage}
-                        </div>
-                      </>
-                    )}
-                  </div>
-                  
-                  {/* Always show pagination controls for debugging - client-side only */}
-                  {typeof window !== 'undefined' && (
-                    <div className="bg-yellow-100 border-2 border-yellow-500 p-4 rounded-lg">
-                      <div className="text-red-600 font-bold text-lg mb-2">
-                        🚨 PAGINATION DEBUG PANEL 🚨
-                      </div>
-                      <div className="text-sm">
-                        <div>customers.length: {customers.length}</div>
-                        <div>totalPages: {totalPages}</div>
-                        <div>itemsPerPage: {itemsPerPage}</div>
-                        <div>condition: {totalPages > 1 || customers.length === 0 ? 'TRUE' : 'FALSE'}</div>
-                        <div>shouldShowPagination: {totalPages > 1 ? 'TRUE' : 'FALSE'}</div>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {(totalPages > 1 || customers.length === 0) && (
-                    <div className="flex items-center space-x-2 bg-green-100 border-2 border-green-500 p-2 rounded">
-                      <div className="text-green-600 text-sm font-semibold mr-4">
-                        ✅ PAGINATION CONTROLS SHOULD BE VISIBLE
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                        disabled={currentPage === 1}
-                      >
-                        Previous
-                      </Button>
-                      
-                      <div className="flex items-center space-x-1">
-                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                          const pageNum = currentPage <= 3 
-                            ? i + 1 
-                            : currentPage >= totalPages - 2 
-                              ? totalPages - 4 + i 
-                              : currentPage - 2 + i;
-                          
-                          if (pageNum < 1 || pageNum > totalPages) return null;
-                          
-                          return (
-                            <Button
-                              key={pageNum}
-                              variant={currentPage === pageNum ? "default" : "outline"}
-                              size="sm"
-                              onClick={() => setCurrentPage(pageNum)}
-                            >
-                              {pageNum}
-                            </Button>
-                          );
-                        })}
-                      </div>
-                      
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                        disabled={currentPage === totalPages}
-                      >
-                        Next
-                      </Button>
-                    </div>
-                  )}
-                  
-                  {/* FORCE SHOW PAGINATION CONTROLS - ALWAYS VISIBLE - client-side only */}
-                  {typeof window !== 'undefined' && (
-                    <div className="bg-blue-100 border-2 border-blue-500 p-4 rounded-lg mt-4">
-                      <div className="text-blue-600 font-bold text-lg mb-2">
-                        🔧 FORCED PAGINATION CONTROLS (ALWAYS VISIBLE)
-                      </div>
-                    <div className="flex items-center space-x-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                        disabled={currentPage === 1}
-                      >
-                        Previous
-                      </Button>
-                      
-                      <div className="flex items-center space-x-1">
-                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                          const pageNum = currentPage <= 3 
-                            ? i + 1 
-                            : currentPage >= totalPages - 2 
-                              ? totalPages - 4 + i 
-                              : currentPage - 2 + i;
-                          
-                          if (pageNum < 1 || pageNum > totalPages) return null;
-                          
-                          return (
-                            <Button
-                              key={pageNum}
-                              variant={currentPage === pageNum ? "default" : "outline"}
-                              size="sm"
-                              onClick={() => setCurrentPage(pageNum)}
-                            >
-                              {pageNum}
-                            </Button>
-                          );
-                        })}
-                      </div>
-                      
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                        disabled={currentPage === totalPages}
-                      >
-                        Next
-                      </Button>
-                    </div>
-                    </div>
-                  )}
-                </div>
               </CardContent>
             </Card>
           )}
@@ -1996,245 +2010,23 @@ export default function UsersPage() {
                 Complete list of Stripe customers with subscription and loyalty data
           </CardDescription>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
-              {loading ? (
-                <div className="flex items-center justify-center h-32">
-                  <p className="text-muted-foreground">Loading customers...</p>
+        <CardContent className="flex flex-col gap-4">
+          {loading ? (
+            <div className="flex items-center justify-center h-32">
+              <p className="text-muted-foreground">Loading customers...</p>
+            </div>
+          ) : (
+            <>
+              <div className="w-full overflow-auto">
+                <div className="overflow-hidden rounded-lg border min-w-[1200px]">
+                  <DataTable table={customerTable} columns={customerColumns} />
                 </div>
-              ) : (
-          <Table className="min-w-[1200px]">
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-12">
-                  <input
-                    type="checkbox"
-                    checked={selectedCustomers.length === filteredCustomers.length && filteredCustomers.length > 0}
-                    onChange={selectedCustomers.length === filteredCustomers.length ? clearSelection : selectAllCustomers}
-                    className="rounded"
-                  />
-                </TableHead>
-                <TableHead 
-                  className="cursor-pointer hover:bg-muted/50 select-none"
-                  onClick={() => handleSort('full_name')}
-                >
-                  <div className="flex items-center gap-2">
-                    Customer
-                    {getSortIcon('full_name')}
-                  </div>
-                </TableHead>
-                <TableHead 
-                  className="cursor-pointer hover:bg-muted/50 select-none"
-                  onClick={() => handleSort('role')}
-                >
-                  <div className="flex items-center gap-2">
-                    Role
-                    {getSortIcon('role')}
-                  </div>
-                </TableHead>
-                <TableHead 
-                  className="cursor-pointer hover:bg-muted/50 select-none"
-                  onClick={() => handleSort('subscription_status')}
-                >
-                  <div className="flex items-center gap-2">
-                    Subscription
-                    {getSortIcon('subscription_status')}
-                  </div>
-                </TableHead>
-                <TableHead 
-                  className="cursor-pointer hover:bg-muted/50 select-none"
-                  onClick={() => handleSort('payment_count')}
-                >
-                  <div className="flex items-center gap-2">
-                    Payments
-                    {getSortIcon('payment_count')}
-                  </div>
-                </TableHead>
-                <TableHead 
-                  className="cursor-pointer hover:bg-muted/50 select-none"
-                  onClick={() => handleSort('loyalty_progress')}
-                >
-                  <div className="flex items-center gap-2">
-                    Loyalty
-                    {getSortIcon('loyalty_progress')}
-                  </div>
-                </TableHead>
-                <TableHead 
-                  className="cursor-pointer hover:bg-muted/50 select-none"
-                  onClick={() => handleSort('total_paid')}
-                >
-                  <div className="flex items-center gap-2">
-                    Total Paid
-                    {getSortIcon('total_paid')}
-                  </div>
-                </TableHead>
-                <TableHead 
-                  className="cursor-pointer hover:bg-muted/50 select-none"
-                  onClick={() => handleSort('last_payment_date')}
-                >
-                  <div className="flex items-center gap-2">
-                    Last Payment
-                    {getSortIcon('last_payment_date')}
-                  </div>
-                </TableHead>
-                <TableHead 
-                  className="cursor-pointer hover:bg-muted/50"
-                  onClick={() => handleSort('subscription_plan')}
-                >
-                  <div className="flex items-center gap-2">
-                    Plan
-                    {getSortIcon('subscription_plan')}
-                  </div>
-                </TableHead>
-                <TableHead 
-                  className="cursor-pointer hover:bg-muted/50"
-                  onClick={() => handleSort('card_status')}
-                >
-                  <div className="flex items-center gap-2">
-                    Card Status
-                    {getSortIcon('card_status')}
-                  </div>
-                </TableHead>
-                <TableHead>GHL Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {paginatedCustomers.map((customer) => {
-                const loyaltyBadge = getLoyaltyBadge(customer.loyalty_progress);
-                return (
-                  <TableRow key={customer.id}>
-                    <TableCell>
-                      <input
-                        type="checkbox"
-                        checked={selectedCustomers.includes(customer.id)}
-                        onChange={() => toggleCustomerSelection(customer.id)}
-                        className="rounded"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{customer.full_name}</div>
-                        <div className="text-sm text-muted-foreground">{customer.email}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="capitalize">
-                        {customer.role}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={getStatusColor(customer.subscription_status || '')}>
-                        {customer.subscription_status || 'No Subscription'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-center">
-                        <div className="font-medium">{customer.payment_count}</div>
-                        <div className="text-xs text-muted-foreground">payments</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={loyaltyBadge.color}>
-                        {loyaltyBadge.text}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      ${(customer.total_paid / 100).toFixed(2)}
-                    </TableCell>
-                    <TableCell>
-                      {customer.last_payment_date 
-                        ? new Date(customer.last_payment_date).toLocaleDateString()
-                        : 'Never'
-                      }
-                    </TableCell>
-                    <TableCell>
-                      {customer.subscription_plan ? (
-                        <Badge variant="outline" className="font-medium">
-                          {customer.subscription_plan}
-                        </Badge>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">No Plan</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {(() => {
-                        // Use card_status from database if available, otherwise calculate it
-                        const cardStatus = customer.card_status || 
-                          (customer.payment_count > 0 || customer.subscription_status === 'active' ? 'Active Card' : 'No Card');
-                        return (
-                          <Badge variant={cardStatus === 'Active Card' ? "default" : "secondary"}>
-                            {cardStatus}
-                          </Badge>
-                        );
-                      })()}
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-2">
-                        {/* Status and Contact Info */}
-                        <div className="flex items-center gap-2">
-                          {(() => {
-                            const ghlData = customerGhlData[customer.email];
-                            if (ghlData?.contactId) {
-                              return (
-                                <div className="flex items-center gap-1">
-                                  <CheckCircle className="h-4 w-4 text-green-600" />
-                                  <span className="text-xs text-green-700">Synced</span>
-                                </div>
-                              );
-                            } else {
-                              return (
-                                <div className="flex items-center gap-1">
-                                  <AlertCircle className="h-4 w-4 text-gray-400" />
-                                  <span className="text-xs text-gray-500">Not Found</span>
-                                </div>
-                              );
-                            }
-                          })()}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => fetchCustomerGhlTags(customer)}
-                            disabled={loadingGhlTags}
-                            className="h-6 px-2 text-xs"
-                          >
-                            <RefreshCw className={`h-3 w-3 mr-1 ${loadingGhlTags ? 'animate-spin' : ''}`} />
-                            {loadingGhlTags ? 'Loading...' : 'Refresh'}
-                          </Button>
-                        </div>
-                        
-                        {/* GHL Tags Display */}
-                        {(() => {
-                          const ghlData = customerGhlData[customer.email];
-                          const tags = ghlData?.tags || [];
-                          
-                          if (tags.length > 0) {
-                            return (
-                              <div className="flex flex-wrap gap-1">
-                                {tags.slice(0, 3).map((tag, index) => (
-                                  <Badge key={index} variant="secondary" className="text-xs">
-                                    {tag}
-                                  </Badge>
-                                ))}
-                                {tags.length > 3 && (
-                                  <Badge variant="outline" className="text-xs">
-                                    +{tags.length - 3}
-                                  </Badge>
-                                )}
-                              </div>
-                            );
-                          } else {
-                            return (
-                              <span className="text-xs text-muted-foreground">No tags</span>
-                            );
-                          }
-                        })()}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-              )}
+              </div>
+              <DataTablePagination table={customerTable} />
+            </>
+          )}
+
+
         </CardContent>
       </Card>
         </TabsContent>
