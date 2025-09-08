@@ -154,19 +154,38 @@ export default function UsersPage() {
         setTotalCustomerCount(count || 0);
       }
       
-      // Fetch customers from database (synced from Stripe) - fetch all rows
-      const { data: customers, error } = await supabase
-        .from('customers')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(2000); // Increased limit to get all customers
-
-      if (error) {
-        console.error('Error fetching customers:', error);
-        // Fallback to profiles if customers table doesn't exist yet
-        await fetchCustomersFromProfiles();
-        return;
+      // Fetch customers from database (synced from Stripe) - fetch all rows using pagination
+      let allCustomers: any[] = [];
+      let from = 0;
+      const batchSize = 1000;
+      
+      while (true) {
+        const { data: batch, error: batchError } = await supabase
+          .from('customers')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .range(from, from + batchSize - 1);
+          
+        if (batchError) {
+          console.error('Error fetching customers batch:', batchError);
+          break;
+        }
+        
+        if (!batch || batch.length === 0) {
+          break;
+        }
+        
+        allCustomers = [...allCustomers, ...batch];
+        console.log(`📊 Fetched batch ${Math.floor(from/batchSize) + 1}: ${batch.length} customers (total: ${allCustomers.length})`);
+        from += batchSize;
+        
+        // If we got less than batchSize, we've reached the end
+        if (batch.length < batchSize) {
+          break;
+        }
       }
+      
+      const customers = allCustomers;
 
       if (!customers || customers.length === 0) {
         console.error('No customers fetched, trying fallback');
@@ -1106,7 +1125,7 @@ export default function UsersPage() {
   const totalTeamMembers = teamMembers.length;
 
   return (
-    <div className="space-y-6 w-full max-w-none overflow-x-auto">
+    <div className="space-y-6 w-full min-w-0">
       {/* Sync Notification */}
       {syncNotification.show && (
         <div className={`p-4 rounded-lg border ${
@@ -1890,7 +1909,7 @@ export default function UsersPage() {
                 Complete list of Stripe customers with subscription and loyalty data
           </CardDescription>
         </CardHeader>
-        <CardContent className="overflow-x-auto w-full">
+        <CardContent className="overflow-x-auto">
               {loading ? (
                 <div className="flex items-center justify-center h-32">
                   <p className="text-muted-foreground">Loading customers...</p>
