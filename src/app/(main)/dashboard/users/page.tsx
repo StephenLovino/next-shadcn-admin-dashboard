@@ -532,18 +532,18 @@ export default function UsersPage() {
   const endIndex = itemsPerPage === -1 ? filteredCustomers.length : startIndex + itemsPerPage;
   const paginatedCustomers = filteredCustomers.slice(startIndex, endIndex);
   
-  // Debug pagination
-  console.log('🔍 PAGINATION DEBUG:', {
-    customersLength: customers.length,
-    filteredCustomersLength: filteredCustomers.length,
-    itemsPerPage,
-    totalPages,
-    currentPage,
-    startIndex,
-    endIndex,
-    paginatedLength: paginatedCustomers.length,
-    shouldShowPagination: totalPages > 1
-  });
+  // Debug pagination - explicit logging
+  console.log('🔍 PAGINATION DEBUG:');
+  console.log('  customersLength:', customers.length);
+  console.log('  filteredCustomersLength:', filteredCustomers.length);
+  console.log('  itemsPerPage:', itemsPerPage);
+  console.log('  totalPages:', totalPages);
+  console.log('  currentPage:', currentPage);
+  console.log('  startIndex:', startIndex);
+  console.log('  endIndex:', endIndex);
+  console.log('  paginatedLength:', paginatedCustomers.length);
+  console.log('  shouldShowPagination:', totalPages > 1);
+  console.log('  paginationCondition:', totalPages > 1 || customers.length === 0);
 
 
   // Reset to first page when filters change
@@ -1651,6 +1651,9 @@ export default function UsersPage() {
                             (Total in database: {totalCustomerCount})
                           </span>
                         )}
+                        <div className="mt-1 text-xs text-gray-500">
+                          DEBUG: customers={customers.length}, filtered={filteredCustomers.length}, totalPages={totalPages}, itemsPerPage={itemsPerPage}
+                        </div>
                       </>
                     )}
                   </div>
@@ -1658,11 +1661,9 @@ export default function UsersPage() {
                   {/* Always show pagination controls for debugging */}
                   {(totalPages > 1 || customers.length === 0) && (
                     <div className="flex items-center space-x-2">
-                      {customers.length === 0 && (
-                        <div className="text-red-600 text-sm font-semibold mr-4">
-                          DEBUG: customers.length = 0, totalPages = {totalPages}
-                        </div>
-                      )}
+                      <div className="text-blue-600 text-sm font-semibold mr-4">
+                        DEBUG: customers={customers.length}, totalPages={totalPages}, condition={totalPages > 1 || customers.length === 0 ? 'TRUE' : 'FALSE'}
+                      </div>
                       <Button
                         variant="outline"
                         size="sm"
