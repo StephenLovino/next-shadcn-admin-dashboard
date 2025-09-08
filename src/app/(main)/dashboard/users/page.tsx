@@ -14,7 +14,7 @@ import { useUserPermissions } from "@/hooks/use-user-permissions";
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { addUser, deleteUser, InternalUser } from "@/data/users";
-import { Plus, Edit, Trash2, UserCheck, UserX, Clock, Users, UserPlus, RefreshCw, Pause, Play, CheckCircle, AlertCircle, Search, Filter, Download, X, ArrowUpDown, ArrowUp, ArrowDown, ExternalLink, Tag, Zap } from "lucide-react";
+import { Plus, Edit, Trash2, UserCheck, UserX, Clock, Users, UserPlus, RefreshCw, Pause, Play, CheckCircle, AlertCircle, Search, Filter, Download, X, ExternalLink, Tag, Zap } from "lucide-react";
 import { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/data-table/data-table";
 import { DataTablePagination } from "@/components/data-table/data-table-pagination";
@@ -675,7 +675,7 @@ export default function UsersPage() {
   // Filter, search, and sort logic
   useEffect(() => {
     // First, merge customers with GHL data
-    let customersWithGhlData = customers.map(customer => {
+    const customersWithGhlData = customers.map(customer => {
       const ghlData = customerGhlData[customer.email];
       if (ghlData && ghlData.tags.length > 0) {
         console.log(`🏷️ Customer ${customer.email} has tags:`, ghlData.tags);
@@ -1011,13 +1011,7 @@ export default function UsersPage() {
     }
   };
 
-  const toggleCustomerSelection = (customerId: string) => {
-    setSelectedCustomers(prev => 
-      prev.includes(customerId) 
-        ? prev.filter(id => id !== customerId)
-        : [...prev, customerId]
-    );
-  };
+
 
   const selectAllCustomers = () => {
     setSelectedCustomers(filteredCustomers.map(c => c.id));
@@ -1242,20 +1236,7 @@ export default function UsersPage() {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'active':
-        return 'bg-green-100 text-green-800';
-      case 'canceled':
-        return 'bg-red-100 text-red-800';
-      case 'past_due':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'no subscription':
-        return 'bg-gray-100 text-gray-800';
-      default:
-        return 'bg-blue-100 text-blue-800';
-    }
-  };
+
 
 
 
