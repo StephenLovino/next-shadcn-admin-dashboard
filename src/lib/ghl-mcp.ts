@@ -108,7 +108,9 @@ class GHLMCPClient {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': this.config.headers.Authorization,
-          'Version': this.config.headers.Version
+          'Version': this.config.headers.Version,
+          // Some endpoints require explicit LocationId header
+          'LocationId': this.config.headers.locationId
         },
         body: body ? JSON.stringify(body) : undefined
       });
@@ -159,23 +161,30 @@ class GHLMCPClient {
    */
   async getTags(): Promise<GHLTag[]> {
     try {
-      // Note: GHL MCP doesn't have a direct get-tags endpoint
-      // We'll need to fetch contacts and extract unique tags
+      // Try official tags endpoint first
+      try {
+        const locationId = this.config.headers.locationId;
+        const result = await this.makeDirectRequest(`locations/${locationId}/tags`);
+        const tags = (result?.tags || result?.data || []).map((t: any) => ({
+          id: t.id ?? t.name?.toLowerCase().replace(/\s+/g, '-'),
+          name: t.name ?? t.label ?? String(t),
+          color: t.color ?? '#3B82F6'
+        }));
+        if (tags.length > 0) return tags;
+      } catch (e) {
+        console.warn('Falling back to tags-from-contacts due to tags endpoint error:', e);
+      }
+
+      // Fallback: derive tags from contacts list
       const contacts = await this.getContacts(1000, 0);
       const tagMap = new Map<string, GHLTag>();
-      
       contacts.forEach(contact => {
         contact.tags?.forEach(tag => {
           if (!tagMap.has(tag)) {
-            tagMap.set(tag, {
-              id: tag.toLowerCase().replace(/\s+/g, '-'),
-              name: tag,
-              color: '#3B82F6' // Default blue color
-            });
+            tagMap.set(tag, { id: tag.toLowerCase().replace(/\s+/g, '-'), name: tag, color: '#3B82F6' });
           }
         });
       });
-
       return Array.from(tagMap.values());
     } catch (error) {
       console.error('Failed to fetch GHL tags:', error);
