@@ -1659,10 +1659,23 @@ export default function UsersPage() {
                   </div>
                   
                   {/* Always show pagination controls for debugging */}
+                  <div className="bg-yellow-100 border-2 border-yellow-500 p-4 rounded-lg">
+                    <div className="text-red-600 font-bold text-lg mb-2">
+                      🚨 PAGINATION DEBUG PANEL 🚨
+                    </div>
+                    <div className="text-sm">
+                      <div>customers.length: {customers.length}</div>
+                      <div>totalPages: {totalPages}</div>
+                      <div>itemsPerPage: {itemsPerPage}</div>
+                      <div>condition: {totalPages > 1 || customers.length === 0 ? 'TRUE' : 'FALSE'}</div>
+                      <div>shouldShowPagination: {totalPages > 1 ? 'TRUE' : 'FALSE'}</div>
+                    </div>
+                  </div>
+                  
                   {(totalPages > 1 || customers.length === 0) && (
-                    <div className="flex items-center space-x-2">
-                      <div className="text-blue-600 text-sm font-semibold mr-4">
-                        DEBUG: customers={customers.length}, totalPages={totalPages}, condition={totalPages > 1 || customers.length === 0 ? 'TRUE' : 'FALSE'}
+                    <div className="flex items-center space-x-2 bg-green-100 border-2 border-green-500 p-2 rounded">
+                      <div className="text-green-600 text-sm font-semibold mr-4">
+                        ✅ PAGINATION CONTROLS SHOULD BE VISIBLE
                       </div>
                       <Button
                         variant="outline"
@@ -1706,6 +1719,55 @@ export default function UsersPage() {
                       </Button>
                     </div>
                   )}
+                  
+                  {/* FORCE SHOW PAGINATION CONTROLS - ALWAYS VISIBLE */}
+                  <div className="bg-blue-100 border-2 border-blue-500 p-4 rounded-lg mt-4">
+                    <div className="text-blue-600 font-bold text-lg mb-2">
+                      🔧 FORCED PAGINATION CONTROLS (ALWAYS VISIBLE)
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                        disabled={currentPage === 1}
+                      >
+                        Previous
+                      </Button>
+                      
+                      <div className="flex items-center space-x-1">
+                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                          const pageNum = currentPage <= 3 
+                            ? i + 1 
+                            : currentPage >= totalPages - 2 
+                              ? totalPages - 4 + i 
+                              : currentPage - 2 + i;
+                          
+                          if (pageNum < 1 || pageNum > totalPages) return null;
+                          
+                          return (
+                            <Button
+                              key={pageNum}
+                              variant={currentPage === pageNum ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => setCurrentPage(pageNum)}
+                            >
+                              {pageNum}
+                            </Button>
+                          );
+                        })}
+                      </div>
+                      
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                        disabled={currentPage === totalPages}
+                      >
+                        Next
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
