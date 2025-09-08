@@ -6,15 +6,8 @@ export async function authMiddleware(req: NextRequest) {
   console.log("🔍 Middleware Debug:");
   console.log("Path:", pathname);
 
-  // For dashboard routes, redirect unauthenticated users to login
+  // Allow dashboard routes; client-side `ProtectedRoute` handles redirects
   if (pathname.startsWith("/dashboard")) {
-    const hasSupabaseCookie = req.cookies.getAll().some((c) => c.name.startsWith("sb-"));
-    if (!hasSupabaseCookie) {
-      const url = req.nextUrl.clone();
-      url.pathname = "/auth/v2/login";
-      url.searchParams.set("redirect", pathname);
-      return NextResponse.redirect(url);
-    }
     return NextResponse.next();
   }
 
