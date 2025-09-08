@@ -94,6 +94,8 @@ async function syncCustomersToDatabase() {
           // Basic customer data first
           let subscriptionStatus = 'No Subscription';
           let subscriptionId = null;
+          let subscriptionPlan = null;
+          let subscriptionPlanId = null;
           let currentPeriodEnd = null;
           let hasActiveSubscription = false;
           let hasCanceledSubscription = false;
@@ -121,6 +123,37 @@ async function syncCustomersToDatabase() {
                 subscriptionId = sub.id;
                 hasActiveSubscription = true;
                 
+                // Get subscription plan details
+                if (sub.items && sub.items.data && sub.items.data.length > 0) {
+                  const price = sub.items.data[0].price;
+                  if (price) {
+                    subscriptionPlanId = price.id;
+                    
+                    // Try to get the product name from Stripe
+                    try {
+                      if (price.product) {
+                        const product = await stripe.products.retrieve(price.product as string);
+                        subscriptionPlan = product.name;
+                      } else if (price.metadata && price.metadata.plan_name) {
+                        subscriptionPlan = price.metadata.plan_name;
+                      } else if (price.nickname) {
+                        subscriptionPlan = price.nickname;
+                      } else {
+                        // Fallback to price amount and interval
+                        const amount = price.unit_amount ? (price.unit_amount / 100) : 0;
+                        const interval = price.recurring?.interval || 'month';
+                        subscriptionPlan = `$${amount}/${interval}`;
+                      }
+                    } catch (productError) {
+                      console.log(`Could not fetch product for price ${price.id}:`, productError);
+                      // Fallback to price amount and interval
+                      const amount = price.unit_amount ? (price.unit_amount / 100) : 0;
+                      const interval = price.recurring?.interval || 'month';
+                      subscriptionPlan = `$${amount}/${interval}`;
+                    }
+                  }
+                }
+                
                 // Safely handle current_period_end
                 try {
                   const subData = sub as any;
@@ -142,6 +175,35 @@ async function syncCustomersToDatabase() {
                   const latestSub = otherSubscriptions.data[0];
                   subscriptionStatus = latestSub.status;
                   subscriptionId = latestSub.id;
+                  
+                  // Get subscription plan details for non-active subscriptions too
+                  if (latestSub.items && latestSub.items.data && latestSub.items.data.length > 0) {
+                    const price = latestSub.items.data[0].price;
+                    if (price) {
+                      subscriptionPlanId = price.id;
+                      
+                      // Try to get the product name from Stripe
+                      try {
+                        if (price.product) {
+                          const product = await stripe.products.retrieve(price.product as string);
+                          subscriptionPlan = product.name;
+                        } else if (price.metadata && price.metadata.plan_name) {
+                          subscriptionPlan = price.metadata.plan_name;
+                        } else if (price.nickname) {
+                          subscriptionPlan = price.nickname;
+                        } else {
+                          const amount = price.unit_amount ? (price.unit_amount / 100) : 0;
+                          const interval = price.recurring?.interval || 'month';
+                          subscriptionPlan = `$${amount}/${interval}`;
+                        }
+                      } catch (productError) {
+                        console.log(`Could not fetch product for price ${price.id}:`, productError);
+                        const amount = price.unit_amount ? (price.unit_amount / 100) : 0;
+                        const interval = price.recurring?.interval || 'month';
+                        subscriptionPlan = `$${amount}/${interval}`;
+                      }
+                    }
+                  }
                   
                   hasCanceledSubscription = otherSubscriptions.data.some(sub => sub.status === 'canceled');
                   hasTrialingSubscription = otherSubscriptions.data.some(sub => sub.status === 'trialing');
@@ -210,6 +272,8 @@ async function syncCustomersToDatabase() {
               metadata: customer.metadata,
               subscription_status: comprehensiveStatus,
               subscription_id: subscriptionId,
+              subscription_plan: subscriptionPlan,
+              subscription_plan_id: subscriptionPlanId,
               current_period_end: currentPeriodEnd,
               payment_count: paymentCount,
               total_paid: totalPaid,
@@ -221,6 +285,10 @@ async function syncCustomersToDatabase() {
               has_card: hasCard,
               card_status: cardStatus,
               failed_payment_count: failedPaymentCount,
+              ghl_contact_id: null,
+              ghl_sync_status: 'not_synced',
+              ghl_last_synced_at: null,
+              ghl_tags: [],
             }, {
               onConflict: 'stripe_customer_id'
             });
