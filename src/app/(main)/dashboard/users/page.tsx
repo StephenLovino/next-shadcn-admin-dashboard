@@ -195,8 +195,10 @@ export default function UsersPage() {
       }
 
       console.log('📊 Final total customers fetched:', customers?.length);
+      console.log('📊 Setting customers state with:', customers?.length, 'customers');
       setCustomers(customers || []);
       setFilteredCustomers(customers || []);
+      console.log('📊 Customers state set, filteredCustomers will be:', customers?.length);
     } catch (error) {
       console.error('Error fetching customers:', error);
       await fetchCustomersFromProfiles();
@@ -529,8 +531,8 @@ export default function UsersPage() {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = itemsPerPage === -1 ? filteredCustomers.length : startIndex + itemsPerPage;
   const paginatedCustomers = filteredCustomers.slice(startIndex, endIndex);
-
-  // Debug logging
+  
+  // Debug pagination
   console.log('Pagination Debug:', {
     customersLength: customers.length,
     filteredCustomersLength: filteredCustomers.length,
@@ -541,6 +543,7 @@ export default function UsersPage() {
     endIndex,
     paginatedLength: paginatedCustomers.length
   });
+
 
   // Reset to first page when filters change
   useEffect(() => {
@@ -1125,7 +1128,7 @@ export default function UsersPage() {
   const totalTeamMembers = teamMembers.length;
 
   return (
-    <div className="space-y-6 w-full min-w-0">
+    <div className="space-y-6 w-full min-w-0 max-w-none">
       {/* Sync Notification */}
       {syncNotification.show && (
         <div className={`p-4 rounded-lg border ${

@@ -47,7 +47,7 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
             <ThemeSwitcher />
           </div>
         </header>
-        <div className="flex min-h-0 flex-1 flex-col gap-4">{children}</div>
+        <div className="flex min-h-0 flex-1 flex-col gap-4 min-w-0">{children}</div>
       </SidebarInset>
     </SidebarProvider>
   );
