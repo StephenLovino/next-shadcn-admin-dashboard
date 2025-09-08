@@ -41,7 +41,7 @@ interface GHLSyncResult {
   details: {
     contactId: string;
     email: string;
-    status: 'matched' | 'updated' | 'error';
+    status: 'matched' | 'updated' | 'error' | 'not_found';
     message?: string;
   }[];
 }
