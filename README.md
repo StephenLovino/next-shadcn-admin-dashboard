@@ -122,10 +122,10 @@ supabase/
    git clone https://github.com/StephenLovino/next-shadcn-admin-dashboard.git
    cd next-shadcn-admin-dashboard
    ```
-
+   
 2. **Install dependencies**
    ```bash
-   npm install
+    npm install
    ```
 
 3. **Environment Setup**

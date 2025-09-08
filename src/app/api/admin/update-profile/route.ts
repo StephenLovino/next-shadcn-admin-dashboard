@@ -62,7 +62,7 @@ export async function POST(req: Request) {
     if (typeof body.full_name === "string") update.full_name = body.full_name;
     if (typeof body.email === "string") update.email = body.email;
     if (typeof body.role === "string") {
-      const normalizedRole = body.role.toLowerCase();
+      const normalizedRole = body.role.toString().trim().toLowerCase();
       const allowedRoles = new Set(["owner", "admin", "manager", "viewer"]);
       if (!allowedRoles.has(normalizedRole)) {
         return NextResponse.json({ error: `Invalid role: ${body.role}` }, { status: 400 });

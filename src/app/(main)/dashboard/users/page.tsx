@@ -1344,7 +1344,7 @@ export default function UsersPage() {
                 <Button>
                   <Plus className="h-4 w-4 mr-2" />
                   Add Team Member
-                </Button>
+        </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
@@ -1428,96 +1428,96 @@ export default function UsersPage() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-          </div>
+      </div>
 
           {/* Team Summary Cards */}
-          <div className="grid gap-4 md:grid-cols-3">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Team Members</CardTitle>
-              </CardHeader>
-              <CardContent>
+          </CardHeader>
+          <CardContent>
                 <div className="text-2xl font-bold">{totalTeamMembers}</div>
-                <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
                   All team members
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Active Members</CardTitle>
-              </CardHeader>
-              <CardContent>
+          </CardHeader>
+          <CardContent>
                 <div className="text-2xl font-bold">{activeTeamMembers}</div>
-                <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
                   Currently active
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Pending Approval</CardTitle>
-              </CardHeader>
-              <CardContent>
+          </CardHeader>
+          <CardContent>
                 <div className="text-2xl font-bold">{pendingTeamMembers}</div>
-                <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
                   Awaiting access
-                </p>
-              </CardContent>
-            </Card>
-          </div>
+            </p>
+          </CardContent>
+        </Card>
+      </div>
 
           {/* Team Members Table */}
-          <Card>
-            <CardHeader>
+      <Card>
+        <CardHeader>
               <CardTitle>Team Members</CardTitle>
-              <CardDescription>
+          <CardDescription>
                 Manage your internal team members and their permissions
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
                     <TableHead>Member</TableHead>
-                    <TableHead>Role</TableHead>
+                <TableHead>Role</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Department</TableHead>
                     <TableHead>Last Login</TableHead>
                     <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
                   {teamMembers.map((user) => (
                     <TableRow key={user.id}>
-                      <TableCell>
-                        <div>
+                    <TableCell>
+                      <div>
                           <div className="font-medium">{user.name}</div>
                           <div className="text-sm text-muted-foreground">{user.email}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
+                      </div>
+                    </TableCell>
+                    <TableCell>
                         <Badge className={getRoleColor(user.role)}>
                           {user.role}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
                         <div className="flex items-center gap-2">
                           {getStatusIcon(user.status)}
                           <Badge className={getStatusColorTeam(user.status)}>
                             {user.status}
-                          </Badge>
-                        </div>
-                      </TableCell>
-                      <TableCell>
+                      </Badge>
+                      </div>
+                    </TableCell>
+                    <TableCell>
                         {user.department || 'N/A'}
-                      </TableCell>
-                      <TableCell>
+                    </TableCell>
+                    <TableCell>
                         {user.lastLogin 
                           ? new Date(user.lastLogin).toLocaleDateString()
-                          : 'Never'
-                        }
-                      </TableCell>
+                        : 'Never'
+                      }
+                    </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Button
@@ -1538,12 +1538,12 @@ export default function UsersPage() {
                           )}
                         </div>
                       </TableCell>
-                    </TableRow>
+                  </TableRow>
                   ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
         </TabsContent>
 
         {/* Customer Management Tab */}
