@@ -532,18 +532,20 @@ export default function UsersPage() {
   const endIndex = itemsPerPage === -1 ? filteredCustomers.length : startIndex + itemsPerPage;
   const paginatedCustomers = filteredCustomers.slice(startIndex, endIndex);
   
-  // Debug pagination - explicit logging
-  console.log('🔍 PAGINATION DEBUG:');
-  console.log('  customersLength:', customers.length);
-  console.log('  filteredCustomersLength:', filteredCustomers.length);
-  console.log('  itemsPerPage:', itemsPerPage);
-  console.log('  totalPages:', totalPages);
-  console.log('  currentPage:', currentPage);
-  console.log('  startIndex:', startIndex);
-  console.log('  endIndex:', endIndex);
-  console.log('  paginatedLength:', paginatedCustomers.length);
-  console.log('  shouldShowPagination:', totalPages > 1);
-  console.log('  paginationCondition:', totalPages > 1 || customers.length === 0);
+  // Debug pagination - explicit logging (client-side only)
+  if (typeof window !== 'undefined') {
+    console.log('🔍 PAGINATION DEBUG:');
+    console.log('  customersLength:', customers.length);
+    console.log('  filteredCustomersLength:', filteredCustomers.length);
+    console.log('  itemsPerPage:', itemsPerPage);
+    console.log('  totalPages:', totalPages);
+    console.log('  currentPage:', currentPage);
+    console.log('  startIndex:', startIndex);
+    console.log('  endIndex:', endIndex);
+    console.log('  paginatedLength:', paginatedCustomers.length);
+    console.log('  shouldShowPagination:', totalPages > 1);
+    console.log('  paginationCondition:', totalPages > 1 || customers.length === 0);
+  }
 
 
   // Reset to first page when filters change
@@ -1658,19 +1660,21 @@ export default function UsersPage() {
                     )}
                   </div>
                   
-                  {/* Always show pagination controls for debugging */}
-                  <div className="bg-yellow-100 border-2 border-yellow-500 p-4 rounded-lg">
-                    <div className="text-red-600 font-bold text-lg mb-2">
-                      🚨 PAGINATION DEBUG PANEL 🚨
+                  {/* Always show pagination controls for debugging - client-side only */}
+                  {typeof window !== 'undefined' && (
+                    <div className="bg-yellow-100 border-2 border-yellow-500 p-4 rounded-lg">
+                      <div className="text-red-600 font-bold text-lg mb-2">
+                        🚨 PAGINATION DEBUG PANEL 🚨
+                      </div>
+                      <div className="text-sm">
+                        <div>customers.length: {customers.length}</div>
+                        <div>totalPages: {totalPages}</div>
+                        <div>itemsPerPage: {itemsPerPage}</div>
+                        <div>condition: {totalPages > 1 || customers.length === 0 ? 'TRUE' : 'FALSE'}</div>
+                        <div>shouldShowPagination: {totalPages > 1 ? 'TRUE' : 'FALSE'}</div>
+                      </div>
                     </div>
-                    <div className="text-sm">
-                      <div>customers.length: {customers.length}</div>
-                      <div>totalPages: {totalPages}</div>
-                      <div>itemsPerPage: {itemsPerPage}</div>
-                      <div>condition: {totalPages > 1 || customers.length === 0 ? 'TRUE' : 'FALSE'}</div>
-                      <div>shouldShowPagination: {totalPages > 1 ? 'TRUE' : 'FALSE'}</div>
-                    </div>
-                  </div>
+                  )}
                   
                   {(totalPages > 1 || customers.length === 0) && (
                     <div className="flex items-center space-x-2 bg-green-100 border-2 border-green-500 p-2 rounded">
@@ -1720,11 +1724,12 @@ export default function UsersPage() {
                     </div>
                   )}
                   
-                  {/* FORCE SHOW PAGINATION CONTROLS - ALWAYS VISIBLE */}
-                  <div className="bg-blue-100 border-2 border-blue-500 p-4 rounded-lg mt-4">
-                    <div className="text-blue-600 font-bold text-lg mb-2">
-                      🔧 FORCED PAGINATION CONTROLS (ALWAYS VISIBLE)
-                    </div>
+                  {/* FORCE SHOW PAGINATION CONTROLS - ALWAYS VISIBLE - client-side only */}
+                  {typeof window !== 'undefined' && (
+                    <div className="bg-blue-100 border-2 border-blue-500 p-4 rounded-lg mt-4">
+                      <div className="text-blue-600 font-bold text-lg mb-2">
+                        🔧 FORCED PAGINATION CONTROLS (ALWAYS VISIBLE)
+                      </div>
                     <div className="flex items-center space-x-2">
                       <Button
                         variant="outline"
@@ -1767,7 +1772,8 @@ export default function UsersPage() {
                         Next
                       </Button>
                     </div>
-                  </div>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
