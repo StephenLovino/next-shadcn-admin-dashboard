@@ -64,11 +64,13 @@ export async function POST(req: Request) {
     if (typeof body.role === "string") update.role = body.role;
     update.updated_at = new Date().toISOString();
 
-    const { data: updated, error: updateErr } = await serviceClient
+    const { data: initialUpdated, error: updateErr } = await serviceClient
       .from("profiles")
       .update(update)
       .eq("id", body.id)
       .select("id, email, full_name, role, created_at, updated_at");
+    
+    let updated = initialUpdated;
 
     if (updateErr) {
       return NextResponse.json({ error: updateErr.message }, { status: 400 });
