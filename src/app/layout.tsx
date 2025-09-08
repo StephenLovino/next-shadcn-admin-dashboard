@@ -9,6 +9,7 @@ import { getPreference } from "@/server/server-actions";
 import { PreferencesStoreProvider } from "@/stores/preferences/preferences-provider";
 import { THEME_MODE_VALUES, THEME_PRESET_VALUES, type ThemePreset, type ThemeMode } from "@/types/preferences/theme";
 import { AuthProvider } from "@/contexts/auth-context";
+import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
 
 import "./globals.css";
 
@@ -31,10 +32,13 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       suppressHydrationWarning
     >
       <body className={`${inter.className} min-h-screen antialiased`}>
+        <link rel="manifest" href="/manifest.webmanifest" />
+        <meta name="theme-color" content="#0EA5E9" />
         <AuthProvider>
           <PreferencesStoreProvider themeMode={themeMode} themePreset={themePreset}>
             {children}
             <Toaster />
+            <PWAInstallPrompt />
           </PreferencesStoreProvider>
         </AuthProvider>
       </body>

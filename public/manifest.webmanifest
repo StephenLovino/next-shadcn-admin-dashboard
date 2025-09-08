@@ -1,0 +1,17 @@
+{
+  "name": "AHA Rewards",
+  "short_name": "AHA",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0B0B0C",
+  "theme_color": "#0EA5E9",
+  "description": "Admin dashboard for rewards, CRM and finance.",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icons/maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
+
+
